@@ -3,35 +3,46 @@
 #include <filesystem>
 #include <memory>
 #include <queue>
+#include <locale>
 
 using std::filesystem::path;
 using std::filesystem::directory_iterator;
 
-std::vector<path> GetDirectories(path myPath) {
-	std::vector<std::filesystem::path> dirPath;
-	for (const auto& file : directory_iterator(myPath))
-	{
-		if (file.is_directory())
-		{
-			dirPath.push_back(file);
-		}
-	}
-	return dirPath;
-}
+std::vector<path> GetDirectories(path myPath);
+
+enum Language { EN, ZH_CN, LanguageCount };
+Language currentLang = EN;
+
+#define LS(stringLabel, en, zh_cn) std::string stringLabel[LanguageCount] = {en, zh_cn}
+
+LS(str_searching, "Searching directories in current folder...", "在当前目录中搜索文件夹...");
+LS(str_noDirectoryInCurFolder, "No directory in current folder", "当前目录中无文件夹");
+LS(str_inputPath, "Please input a directory path: ", "请输入文件夹路径: ");
+LS(str_inputIndexOrPath, "Please input a directory index or path: ", "请输入文件夹序号或路径: ");
+LS(str_error, "Error: ", "错误: ");
+LS(str_foundDir1, "In direcotry ", "在 ");
+LS(str_foundDir2, ", found ", " 中找到 ");
+LS(str_foundDir3, " directories", " 个文件夹");
+LS(str_foundFile3, " files", " 个文件");
+LS(str_inputCount, "Please input how many files are needed: ", "请输入文件需求数: ");
+LS(str_completed, "--Complete--", "--已完成--");
+LS(str_incompleted, "--Incomplete--", "--未完成--");
+LS(str_summary, " incomplete in total", " 项未完成");
 
 int wmain(int argc, wchar_t* argv[])
 {
 	using namespace std;
-	cout << "在当前目录中搜索文件夹..." << endl;
+	cout << str_searching[currentLang] << endl;
 
 	vector<path> dirPath = GetDirectories("./");
 	for (unsigned int x = 0; x < dirPath.size(); x++)
 		cout << x+1 << ". " << dirPath[x].filename() << endl;
 
 	if (dirPath.size() == 0)
-		cout << "当前目录中无文件夹" << endl << "请输入文件夹路径: ";
+		cout << str_noDirectoryInCurFolder[currentLang] << endl 
+		<< str_inputPath[currentLang];
 	else 
-		cout << "请输入文件夹序号或路径: ";
+		cout << str_inputIndexOrPath[currentLang];
 
 	std::string input;
 	cin >> input;
@@ -51,12 +62,15 @@ int wmain(int argc, wchar_t* argv[])
 		targetSubDir = GetDirectories(*targetPath);
 	}
 	catch (exception e) {
-		cout << "错误: " << e.what() << endl;
+		cout << str_error[currentLang] << e.what() << endl;
 		exit(-1);
 	}
-	
-	cout << "在 " << *targetPath << " 中找到" << targetSubDir.size() << "个文件夹" << endl;
-	cout << "请输入文件需求数: ";
+
+	cout << str_foundDir1[currentLang] << *targetPath 
+		<< str_foundDir2[currentLang] << targetSubDir.size() 
+		<< str_foundDir3[currentLang] << endl;
+
+	cout << str_inputCount[currentLang];
 	int req;
 	cin >> req;
 	cout << endl << "------------------------------------------" << endl;
@@ -67,7 +81,9 @@ int wmain(int argc, wchar_t* argv[])
 		for (const auto& file : directory_iterator(path)) 
 			fileCount++;
 
-		cout << "在文件夹 " << path.filename() << " 中找到 " << fileCount << " 个文件" << endl;
+		cout << str_foundDir1[currentLang] << path.filename() 
+			<< str_foundDir2[currentLang] << fileCount 
+			<< str_foundFile3[currentLang] << endl;
 		
 		if (fileCount < req) {
 			InvalidDir.emplace(path);
@@ -81,7 +97,7 @@ int wmain(int argc, wchar_t* argv[])
 	int validSize = (int)ValidDir.size();
 	int invalidSize = (int)InvalidDir.size();
 
-	printf_s("\n\n%8s  |  %8s\n", "--已完成--", "--未完成--");
+	printf_s("\n\n%12s  |  %s\n", str_completed[currentLang].c_str(), str_incompleted[currentLang].c_str());
 	int size = targetSubDir.size();
 	while (size) {
 		string valid, invalid;
@@ -96,13 +112,25 @@ int wmain(int argc, wchar_t* argv[])
 			size--;
 		}
 		
-		cout << setw(10) << ((valid.length()) ? valid : "")
+		cout << setw(12) << ((valid.length()) ? valid : "")
 			<< "  |  "
 			<< ((invalid.length()) ? invalid : "") << endl;
 	}
 	cout << endl << "------------------------------------------" << endl;
 
-	cout << endl << endl << "共 " << invalidSize << " 项不符合条件" << endl;
+	cout << endl << endl << invalidSize << str_summary[currentLang] << endl;
 
 	system("pause");
+}
+
+std::vector<path> GetDirectories(path myPath) {
+	std::vector<std::filesystem::path> dirPath;
+	for (const auto& file : directory_iterator(myPath))
+	{
+		if (file.is_directory())
+		{
+			dirPath.push_back(file);
+		}
+	}
+	return dirPath;
 }
